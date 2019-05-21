@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+	<body>
+	<canvas id="xo"style="border:1px solid #000000;"> 
+		     Your browser does not support HTML5 Canvas.
+	<canvas id="stat"style="position: absolute; bottom: 0px; right: 0px; border:1px solid #000000;"> 
+		  Your browser does not support HTML5 Canvas.
+	</canvas>
+	</canvas>
+<script>
+
+var field = [];
+var turn = 0;
+const width = 30;
+const height = 15;
+const cellSize = 40;
+var margin = 5;
+
+
+var c = document.getElementById("xo");
+var ctx = c.getContext("2d");
+
+var s = document.getElementById("xo");
+var stx = s.getContext("2d");
+
+c.width = width * cellSize;
+
+c.height = height*cellSize;
+
+s.height = c.height;
+s.width = 100;
+
+ctx.beginPath();
+for (var i = 0; i < width; i++) {
+	ctx.moveTo(i*cellSize, 0);
+	ctx.lineTo(i*cellSize, cellSize*height);
+	ctx.stroke();
+}
+for (var j = 0; j < height; j++) {
+	ctx.moveTo(0, j*cellSize);
+	ctx.lineTo(cellSize*width, j*cellSize);
+	ctx.stroke();
+}
+
+for (i = 0; i < width; i++) {
+	field.push([]);
+	for (j = 0; j < height; j++) {
+		field[i].push(0);
+	}
+}
+c.addEventListener('click', (e) => {
+	/*
+	curSquareX = Math.floor(e.clientX) - Math.floor(e.clientX)%cellSize - cellSize;
+	curSquareY = Math.floor(e.clientY) - Math.floor(e.clientY)%cellSize - cellSize;
+	ctx.fillRect(curSquareX, curSquareY, cellSize, cellSize);
+	*/
+	curSquareX = Math.floor(e.clientX) - Math.floor(e.clientX)%cellSize;
+	curSquareY = Math.floor(e.clientY) - Math.floor(e.clientY)%cellSize;
+
+	if (field[curSquareX/cellSize][curSquareY/cellSize] == 0) {
+		if (turn == 1) {
+			ctx.beginPath();
+			ctx.arc(curSquareX+cellSize/2, curSquareY+cellSize/2, cellSize/2-margin, 0, Math.PI*2, false);
+			ctx.strokeStyle = 'blue';
+			ctx.stroke();
+			turn = 0;
+			field[curSquareX/cellSize][curSquareY/cellSize] = 1;
+		} else if (turn == 0) {
+			ctx.beginPath();
+			ctx.moveTo(curSquareX + margin, curSquareY + margin);
+			ctx.lineTo(curSquareX + cellSize - margin, curSquareY + cellSize - margin);
+
+			ctx.moveTo(curSquareX + cellSize -margin, curSquareY + margin);
+			ctx.lineTo(curSquareX + margin, curSquareY + cellSize - margin);
+
+			ctx.strokeStyle = 'red';
+			ctx.stroke();
+			turn = 1;
+			field[curSquareX/cellSize][curSquareY/cellSize] = 2;
+		}
+
+		/*
+		curVal = field[curSquareX/cellSize][curSquareY/cellSize];
+		count = 0;
+		firstelem = 0
+		for (i = (curSquareX/cellSize - 4 > 0 ? curSquareX/cellSize - 4: 0); i < curSquareX/cellSize + 5; i++) {
+			if (count == 0) {
+				firstElemX = i*cellSize + cellSize/2;
+				firstElemY = curSquareY + cellSize/2;
+			}
+			if (curVal == field [i][curSquareY/cellSize]) {
+				count ++;
+				console.log(count);
+				if (count == 5) {
+					selebrate (firstElemX + cellSize/2, firstElemY + cellSize/2, curSquareX, curSquareY);
+					return;
+				} 
+			} else { count = 0 }
+		}
+		for (j = curSquareY/cellSize - 4; j < curSquareY/cellSize + 5; j++) {
+			if (curVal == field [curSquareX/cellSize][j]) {
+				count ++;
+				if (count == 5) {
+					alert ('GG');
+					return;
+				} 
+			} else { count = 0 }
+		}
+		curVal = field[curSquareX/cellSize][curSquareX/cellSize];
+		for (k = -4; k < 5; k++) {
+			if (curVal == field [curSquareX/cellSize+k][curSquareY/cellSize+k]) {
+				count ++;
+				if (count == 5) {
+					alert ('GG');
+					return;
+				} 
+			} else { count = 0 }
+		}
+		curVal = field[curSquareX/cellSize][curSquareX/cellSize];
+		for (k = -4; k < 5; k++) {
+			if (curVal == field [curSquareX/cellSize+k][curSquareY/cellSize-k]){
+				count ++;
+				if (count == 5) {
+					alert ('GG') ;
+					return;
+				} 
+			} else { count = 0 }
+		}
+		*/
+	}
+}, false);
+
+function selebrate (firstX, firstY, lastX, lastY) {
+			ctx.beginPath();
+			ctx.moveTo(firstX, firstY);
+			ctx.lineTo(lastX , lastY);
+
+			ctx.strokeStyle = 'orange';
+			ctx.stroke();
+}
+</script>
+</body>
+</html>
+
+<style>
+body {
+	margin:0;
+	margin-bottom:0;
+}
+</style>
