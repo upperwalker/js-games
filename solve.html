@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<style type="text/css">
+	body {
+		overflow: hidden;
+	}
+</style>
+<body>
+
+	<canvas id="labirint" style="border:1px solid #000000;"> 
+	</canvas>
+	<div>
+		<button id="start" onclick="run()"> Старт </button>
+	</div>
+
+	<div>
+		<button id="fill" onclick="fill(cur_position.x, cur_position.y)"> Заполнить </button>
+	</div>
+    <script>
+
+	var Position = function(x, y) {
+	  this.x = x || 0;
+	  this.y = y || 0;
+	  this.state = "obstacle_left";
+	};
+
+	Position.prototype.moveup = function() {
+		this.y = this.y - cell_width;
+		ctx.lineTo(cur_position.x, cur_position.y);
+		ctx.stroke();
+	};
+	Position.prototype.movedown = function() {
+		this.y = this.y + cell_width;
+		ctx.lineTo(cur_position.x, cur_position.y);
+		ctx.stroke();
+	};
+	Position.prototype.moveleft = function() {
+		this.x = this.x - cell_width;
+		ctx.lineTo(cur_position.x, cur_position.y);
+		ctx.stroke();
+	};
+	Position.prototype.moveright = function() {
+		this.x = this.x + cell_width;
+		ctx.lineTo(cur_position.x, cur_position.y);
+		ctx.stroke();
+	};
+
+
+    var c = document.getElementById("labirint");
+	var ctx = c.getContext("2d");
+
+	var isDrawing = false;
+	var isClearing = false;
+	const cell_width = 15;
+	const labirint_size = 40;
+
+	c.width = c.height = cell_width*labirint_size;
+	var labirint_matrix = [];
+	labirint_matrix.length = labirint_size;
+
+	var cur_square_x = 0;
+   	var cur_square_y = 0;
+
+   	var timer = 0;
+
+	cur_position = new Position(cell_width/2, c.height - cell_width/2);
+
+	for (let i = 0; i < labirint_size; i++){
+		labirint_matrix[i] = [];
+		for (let j = 0; j < labirint_size; j++){
+			labirint_matrix[i][j] = 0;
+		}
+	}
+
+
+   function rightclick() {
+    var rightclick;
+    var e = window.event;
+    if (e.which) rightclick = (e.which == 3);
+    else if (e.button) rightclick = (e.button == 2);
+    return rightclick;
+	}
+
+
+   		ctx.fillStyle = 'yellow';
+		ctx.fillRect(0, (labirint_size-1)*cell_width, cell_width, cell_width);
+
+   		ctx.fillStyle = 'blue';
+		ctx.fillRect((labirint_size-1)*cell_width, 0, cell_width, cell_width);
+
+	c.addEventListener('mousemove', (e) => {
+
+		let cur_square_x = Math.floor(window.event.clientX/cell_width);
+   		let cur_square_y = Math.floor(window.event.clientY/cell_width);
+   		if (isDrawing && labirint_matrix[cur_square_x][cur_square_y] != -1) {
+	   		labirint_matrix[cur_square_x][cur_square_y] = -1;
+	   		ctx.fillStyle = 'green';
+			ctx.fillRect(cur_square_x*cell_width, cur_square_y*cell_width, cell_width, cell_width);
+		}
+
+		if (isClearing && labirint_matrix[cur_square_x][cur_square_y] == -1) {
+	   		labirint_matrix[cur_square_x][cur_square_y] = 0;
+			ctx.clearRect(cur_square_x*cell_width, cur_square_y*cell_width, cell_width, cell_width);
+		}
+
+	}, false);
+
+	c.addEventListener('mousedown', e => {
+		if (rightclick()) {
+	 	    isClearing = true;
+	 	    isDrawing = false;
+		} else {
+			isClearing = false;
+			isDrawing = true;
+		}
+	});
+
+	c.addEventListener('mouseup', e => {
+	    isDrawing = false;
+	});
+
+	function pintc(cur_square_x, cur_square_y) {
+   		labirint_matrix[cur_square_x][cur_square_y] = 1;
+   		//ctx.fillStyle = 'red';
+		//ctx.fillRect(cur_square_x*cell_width, cur_square_y*cell_width, cell_width, cell_width);		
+	}
+
+	function check_pintc(cur_square_x, cur_square_y) {
+		if (labirint_matrix[cur_square_x][cur_square_y] == 1) return true;
+		return false;
+	}
+
+
+	function checkup (cur_square_x, cur_square_y) {
+		if (cur_square_y == 0 || labirint_matrix[cur_square_x][cur_square_y - 1] == -1) { 
+			return false;
+		}
+		return true;
+	}
+
+	function checkdown (cur_square_x, cur_square_y) {
+		if (cur_square_y == labirint_size - 1 || labirint_matrix[cur_square_x][cur_square_y + 1] == -1) { 
+			return false;
+		}	
+		return true;
+	}
+
+	function checkleft (cur_square_x, cur_square_y) {
+		if (cur_square_x == 0 || labirint_matrix[cur_square_x -1][cur_square_y] == -1) { 
+			return false;
+		}
+		return true;
+	}
+
+	function checkright (cur_square_x, cur_square_y) {
+		if (cur_square_x == labirint_size - 1 || labirint_matrix[cur_square_x + 1][cur_square_y] == -1) { 
+			return false;
+		}	
+		return true;
+	}
+	function get_pos() {
+		 cur_square_x = Math.floor(cur_position.x/cell_width);
+   		 cur_square_y = Math.floor(cur_position.y/cell_width);
+	}
+
+
+	function fill (x,y) {
+
+	//	setTimeout( () => {
+		ctx.beginPath();
+		ctx.moveTo(x, y);
+
+		var sq_x = Math.floor(x/cell_width);
+   		var sq_y = Math.floor(y/cell_width);
+
+   		var curpos = cur_position;
+
+		if (!check_pintc(sq_x, sq_y)) {
+			ctx.strokeStyle = 'red';
+			pintc(sq_x, sq_y);
+			if (checkup(sq_x, sq_y) && !check_pintc(sq_x, sq_y-1)) { 
+				cur_position.moveup();
+				fill(curpos.x,curpos.y);
+				cur_position.movedown();
+			}
+		    if (checkleft(sq_x, sq_y) && !check_pintc(sq_x-1, sq_y)) {
+				cur_position.moveleft();
+				fill(curpos.x,curpos.y);
+				cur_position.moveright();
+			} 
+			if (checkdown(sq_x, sq_y) && !check_pintc(sq_x, sq_y+1)) {
+				cur_position.movedown();
+				fill(curpos.x,curpos.y);
+				cur_position.moveup();
+			}
+			if (checkright(sq_x, sq_y) &&!check_pintc(sq_x+1, sq_y)) {
+				cur_position.moveright();
+				fill(curpos.x,curpos.y);
+				cur_position.moveleft();
+			} 
+		}
+	//	}, 1000);
+
+	}
+
+
+	function move() {
+		ctx.beginPath();
+		ctx.moveTo(cur_position.x, cur_position.y);
+		get_pos();
+
+		ctx.strokeStyle = 'red';
+
+		if (cur_square_x == labirint_size-1 && cur_square_y == 0) {
+			alert ('GG WP');
+			clearInterval(timer);
+			return;
+		}
+		if (checkup(cur_square_x, cur_square_y) && cur_position.state == "obstacle_left") { 
+			cur_position.moveup();
+			get_pos();
+			if (!checkup(cur_square_x, cur_square_y)) cur_position.state = "obstacle_up";
+			if (checkleft(cur_square_x, cur_square_y)) cur_position.state = "obstacle_down";
+			return;
+		} else if (checkleft(cur_square_x, cur_square_y)&&cur_position.state == "obstacle_down") {
+			cur_position.moveleft();
+			get_pos();
+			if (!checkleft(cur_square_x, cur_square_y)) cur_position.state = "obstacle_left";
+			if (checkdown(cur_square_x, cur_square_y)) cur_position.state = "obstacle_right";
+			return;
+		} else if (checkdown(cur_square_x, cur_square_y)&&cur_position.state == "obstacle_right") {
+			cur_position.movedown();
+			get_pos();
+			if (!checkdown(cur_square_x, cur_square_y)) cur_position.state = "obstacle_down";
+			if (checkright(cur_square_x, cur_square_y)) cur_position.state = "obstacle_up";
+			return;
+		} else if (checkright(cur_square_x, cur_square_y)&&cur_position.state == "obstacle_up") {
+			cur_position.moveright();
+			get_pos();
+			if (!checkright(cur_square_x, cur_square_y)) cur_position.state = "obstacle_right";
+			if (checkup(cur_square_x, cur_square_y)) cur_position.state = "obstacle_left";
+			return;
+		} else {
+			if (cur_position.state == "obstacle_up") {
+				cur_position.state = "obstacle_right";
+			//	cur_position.movedown();
+			}  else if ( cur_position.state == "obstacle_left") {
+				cur_position.state = "obstacle_up";
+			//	cur_position.moveright();
+			}  else if ( cur_position.state == "obstacle_down") {
+				cur_position.state = "obstacle_left";
+			//	cur_position.moveup();
+			}  else if ( cur_position.state == "obstacle_right") {
+				cur_position.state = "obstacle_down";
+			//	cur_position.moveleft();
+			} 
+			return;
+		}
+	}
+	function run() {
+		timer = setInterval( () => {move();}, 10);
+	}
+    </script>
+
+    </body>
+
+</html>

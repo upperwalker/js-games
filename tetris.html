@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<style type="text/css">
+	body {
+		overflow: hidden;
+	}
+</style>
+<body>
+<div id='d1' style="position:absolute; top:0px; left:0px; z-index:1"> 
+	<canvas id="tetris" width="400" height="600" style="border:1px solid #000000;"> 
+		     Your browser does not support HTML5 Canvas.
+	</canvas>
+</div>
+<div id='d2' style="position:absolute; top:0px; left:401px; z-index:2">
+        <canvas id="gamestat" width="100" height="50" style="border:1px solid #000000;">
+              Your browser does not support HTML5 Canvas.
+        </canvas>
+</div>
+    <script>
+    var c = document.getElementById("tetris");
+	var ctx = c.getContext("2d");
+	var figureTypeIndex = 0;
+    var figureType = "";
+    var figureCoordinatesArray = [];
+    var squareSide = 20;
+    var animationSpeed = 300;
+    var stack = [];
+    var rowsCount = 0;
+    var GameNotOverFlag = true;
+
+
+	document.addEventListener('keydown', (e) => {
+
+
+		if (GameNotOverFlag) { //клавиши активны только если игра не закончена
+	    	switch(e.keyCode){
+	        case 37:  // если нажата клавиша влево
+	        if (!checkObstacle(e.keyCode, figureCoordinatesArray)) {
+	    			for (var i = 0; i < figureCoordinatesArray.length; i++) {
+	        	    	ctx.clearRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+        	    		figureCoordinatesArray[i].x -= squareSide;
+	       	    	}
+				   for (var i = 0; i < figureCoordinatesArray.length; i++) {
+				   		ctx.fillStyle = figureCoordinatesArray[i].color;
+					    ctx.fillRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+	        	   	}
+	        }
+	        break;  
+	      	case 39:   // если нажата клавиша вправо
+	        if (!checkObstacle(e.keyCode, figureCoordinatesArray)) {
+	    		for (var i = 0; i < figureCoordinatesArray.length; i++) {
+	        	    ctx.clearRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+	        	    figureCoordinatesArray[i].x += squareSide;
+	   	    	}
+				for (var i = 0; i < figureCoordinatesArray.length; i++) {
+					ctx.fillStyle = figureCoordinatesArray[i].color;
+					ctx.fillRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+	        	}
+	        }
+	        break;  
+	        case 40:   // если нажата клавиша вниз
+	        if (!checkGround()) {
+		        for (var i = 0; i < figureCoordinatesArray.length; i++) {
+		    			    for (var i = 0; i < figureCoordinatesArray.length; i++) {
+		        	    		ctx.clearRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+		        	    		figureCoordinatesArray[i].y += squareSide;
+
+		        	    	}
+						   for (var i = 0; i < figureCoordinatesArray.length; i++) {
+						   		ctx.fillStyle = figureCoordinatesArray[i].color;
+							    ctx.fillRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+		        	    	}
+		        }
+	        }
+	        break; 
+	        case 32: //пробел (вращение)
+
+			var x0 = figureCoordinatesArray[0].x;
+			var x1 = figureCoordinatesArray[1].x;
+			var x2 = figureCoordinatesArray[2].x;
+			var x3 = figureCoordinatesArray[3].x;
+			var y0 = figureCoordinatesArray[0].y;	//почему нельзя положить в массив???
+			var y1 = figureCoordinatesArray[1].y;
+			var y2 = figureCoordinatesArray[2].y;
+			var y3 = figureCoordinatesArray[3].y;
+
+			var checkArray = [{"x": x1 - y0 + y1, "y":  y1 + x0 - x1}, {"x": x1 - y2 + y1, "y":  y1 + x2 - x1}, {"x": x1 - y3 + y1, "y":  y1 + x3 - x1}];
+
+			if (!checkObstacle(e.keyCode, checkArray)) {
+
+				for (var i = 0; i < figureCoordinatesArray.length; i++) {
+		      	  ctx.clearRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+		   		}
+
+	    		figureCoordinatesArray[0].x = x1  /*неподвижная точка*/ - y0 + y1;  /*вращение*/
+		  		figureCoordinatesArray[2].x = x1  /*неподвижная точка*/ - y2 + y1; /*вращение*/
+		   		figureCoordinatesArray[3].x = x1 /*неподвижная точка*/ - y3 + y1;  /*вращение*/
+
+		   		figureCoordinatesArray[0].y = y1  /*неподвижная точка*/ + x0 - x1;  /*вращение*/
+		   		figureCoordinatesArray[2].y = y1 /*неподвижная точка*/ + x2 - x1;/*вращение*/
+		    	figureCoordinatesArray[3].y = y1 /*неподвижная точка*/ + x3 - x1; /*вращение*/
+
+				for (var i = 0; i < figureCoordinatesArray.length; i++) {
+					 ctx.fillStyle = figureCoordinatesArray[i].color;
+					 ctx.fillRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+			    }
+		    }
+
+	        break; 
+	        default:
+	    	}
+    		//ctx.fillStyle = "black";
+    		//ctx.fillRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+    	}
+
+	}, false);
+
+
+function getRandomColor() {
+  var characters = "0123456789ABCDEF";
+  var color = '#';
+
+  for (var i = 0; i < 6; i++) {
+    color += characters[getRandomInt(15)];
+  }
+  
+  return color;
+}
+
+
+
+	function getRandomInt(max) {
+		  return Math.floor(Math.random() * max);
+	}
+
+	function checkObstacle(code, array) {
+
+		for (var i = 0; i < array.length; i++) {
+			switch(code) {
+	        case 37:  // если нажата клавиша влево
+			if (array[i].x < squareSide) return true;
+	       	for(var j = 0; j < stack.length; j++) {
+
+    			if (array[i].y == stack[j].y && array[i].x == stack[j].x + squareSide) {
+    				return true;
+    			}
+
+    		}
+	        break;  
+	      	case 39:   // если нажата клавиша вправо
+			if (array[i].x > c.width - 2*squareSide) return true;
+	        for(var j = 0; j < stack.length; j++) {
+
+    			if (array[i].y == stack[j].y  && array[i].x == stack[j].x - squareSide) {
+    				return true;
+    			}
+
+    		}
+	        break; 
+	        case 32:   // вращение
+
+	        for(var j = 0; j < stack.length; j++) {
+
+    			if (array[i].y == stack[j].y  && array[i].x == stack[j].x) {
+    				return true;
+    			}
+
+    		}
+
+ 			if (array[i].y > c.height - squareSide) return true;
+
+ 			if (array[i].x < 0 || array[i].x > c.width - squareSide) return true;
+
+	        break;  
+	        default:
+	    	}
+		}
+		return false;
+	}
+
+	function setFigureType() {
+
+	figureTypeIndex = getRandomInt(5);
+    figureCoordinatesArray.length = 0;
+		switch(figureTypeIndex){
+
+	        case 0:  
+				figureType = "square"; 
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide ,"color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*11, "y": squareSide, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*2, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*11, "y": squareSide*2, "color": getRandomColor()});
+				break;
+	        case 1:   
+				figureType = "s"; 
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*2, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*11, "y": squareSide*2, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*11, "y": squareSide*3, "color": getRandomColor()});
+	            break;
+	        case 2:   
+				figureType = "L";
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*2, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*3, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*11, "y": squareSide*3, "color": getRandomColor()}); 
+	            break;
+	        case 3:  
+				figureType = "T"; 
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*2, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*3, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*11, "y": squareSide*2, "color": getRandomColor()});
+	            break;  
+	        case 4:
+	        	figureType = "|";
+	        	figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*2, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*3, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*4, "color": getRandomColor()});
+	            break;       
+	        default:
+				figureType = "s"; 
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*10, "y": squareSide*2, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*11, "y": squareSide*2, "color": getRandomColor()});
+				figureCoordinatesArray.push({"x": squareSide*11, "y": squareSide*3, "color": getRandomColor()});
+	            break;
+	    }
+
+				for (var j = 0; j < stack.length; j++) {
+					for (var i = 0; i < figureCoordinatesArray.length; i++) {
+						if (stack[j].x == figureCoordinatesArray[i].x && stack[j].y == figureCoordinatesArray[i].y) {
+    						clearInterval(timer);
+    						return false;
+							break;
+						}
+					}
+				}
+    	return true;
+    //	console.log(figureCoordinatesArray);
+        console.log(figureType);
+    }
+
+    function checkAndKillRows(stoppedBlockArray) {
+    	var curHeight = -1;
+    	for (var i = 0; i < stoppedBlockArray.length; i++) {
+    		
+      		if (stoppedBlockArray[i].y == curHeight) continue;
+    		curHeight = stoppedBlockArray[i].y;
+    		var thisRow = stack.filter(function(coordinate) {
+ 					 return coordinate.y == curHeight;
+			});
+
+			if(thisRow.length == c.width/squareSide) { //собрали полную строчку
+				console.log("ВЖУХ!");
+				rowsCount++;
+				updateStats();
+	    		stack = stack.filter(function(coordinate) {
+	 					 return coordinate.y != curHeight;  // убрали ее из массива
+				});
+				for (var j = 0; j < thisRow.length; j++) {
+			        ctx.clearRect(thisRow[j].x, thisRow[j].y, squareSide, squareSide); 
+			    }
+
+				for (var j = 0; j < stack.length; j++) {
+					if (stack[j].y < curHeight) {
+				        ctx.clearRect(stack[j].x, stack[j].y, squareSide, squareSide); //ебашим ее вниз
+				        stack[j].y += squareSide;
+				    }
+				}
+				for (var j = 0; j < stack.length; j++) {
+					if (stack[j].y <= curHeight) {
+						 ctx.fillStyle = stack[j].color;
+						 ctx.fillRect(stack[j].x, stack[j].y, squareSide, squareSide);
+				    }
+				}
+
+			}
+    	}
+    }
+
+    function updateStats () {
+		var s = document.getElementById("gamestat");
+		var statContext = s.getContext("2d");
+		statContext.clearRect(0, 0, s.width, s.height);
+		statContext.font = "20px Arial";
+		statContext.strokeStyle = "red";   
+		statContext.lineWidth = 1;
+		statContext.strokeText("Score: " + rowsCount, 5, 32);
+	}
+
+    function figureFall() {
+    	if(checkGround())	{
+    		clearInterval(timer);
+    		stack = stack.concat(figureCoordinatesArray); //добаляем деталь в кучу
+    		checkAndKillRows(figureCoordinatesArray);
+    		figureCoordinatesArray.length = 0;
+    		GameNotOverFlag = setFigureType();
+    	//	console.log(stack);
+    		if (GameNotOverFlag) {
+    			timer = setInterval(figureFall, animationSpeed); //запускаем анимацию
+    		} else {
+				ctx.font = "50px Arial";
+				ctx.strokeStyle = "red";   
+				ctx.lineWidth = 1;
+				ctx.strokeText("GG", 50, 50);
+    		}
+    	} else {
+	    	/*
+	    	for (var i = figureCoordinatesArray.length-1; i > -1; i--) {
+	    		ctx.clearRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+	    		figureCoordinatesArray[i].y += squareSide;
+	    		ctx.fillStyle = "black";
+	    		ctx.fillRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+	    	}
+	    	*/
+	     	for (var i = 0; i < figureCoordinatesArray.length; i++) {
+		        ctx.clearRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+		        figureCoordinatesArray[i].y += squareSide;
+		    }
+			for (var i = 0; i < figureCoordinatesArray.length; i++) {
+				ctx.fillStyle = figureCoordinatesArray[i].color;
+				ctx.fillRect(figureCoordinatesArray[i].x, figureCoordinatesArray[i].y, squareSide, squareSide);
+		    }
+		}
+    }
+
+    function checkGround() {
+    	for (var i = figureCoordinatesArray.length-1; i > -1; i--) {
+
+    		if(figureCoordinatesArray[i].y == c.height - squareSide) {
+    			return true;
+    		}
+
+    		for(var j = 0; j < stack.length; j++) {
+
+    			if (figureCoordinatesArray[i].y == stack[j].y - squareSide && figureCoordinatesArray[i].x == stack[j].x) {
+    				return true;
+    			}
+
+    		}
+    	}
+    	return false;
+    }
+
+    setFigureType();
+    updateStats ();
+   	var timer = setInterval(figureFall, animationSpeed); //запускаем анимацию
+
+    </script>
+    </body>
+</html>

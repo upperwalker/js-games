@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<style type="text/css">
+	body {
+		overflow: hidden;
+	}
+</style>
+<body>
+    <canvas width="1600" height="800" id="snake" style="border:5px solid #000000;"> </canvas>
+    <canvas id="dynamic" width="200" height="150" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+    <script src="https://code.jquery.com/jquery-2.1.0.js"></script>
+    <script>
+    var c = document.getElementById("snake");
+	var ctx = c.getContext("2d");
+	var lengthStat = document.getElementById("dynamic");
+	var statContext = lengthStat.getContext("2d");
+	var SnakeFatness = 30;
+	var leftOffset = SnakeFatness;
+	var topOffset = SnakeFatness;
+	var food_x = 0;
+	var food_y = 0;
+	var snakeLength = 10;
+	ctx.fillStyle="red";
+	var direction = "right";
+	var newdirection = "";
+	var ripSnake = false;
+	var snakeSegementsArray = [];
+
+	document.addEventListener('keydown', (e) => {
+	    switch(e.keyCode){
+         	
+        case 37:  // если нажата клавиша влево
+        	if (direction!="right") newdirection = "left";
+            break;  
+        case 38:   // если нажата клавиша вверх
+        	if (direction!="down") newdirection = "up";
+            break;
+        case 39:   // если нажата клавиша вправо
+     		if (direction!="left") newdirection = "right";
+            break;
+        case 40:   // если нажата клавиша вниз
+     		if (direction!="up") newdirection = "down";
+            break;  
+        default:
+    	}
+    	direction = newdirection;
+	}, false);
+	function getRandomInt(max) {
+		  return Math.ceil(Math.random() * Math.ceil(max));
+	}
+	function createFood () {
+		c = document.getElementById("snake");
+		ctx.fillStyle="blue";
+		food_x = getRandomInt(Math.ceil(parseInt(c.width)/SnakeFatness))*SnakeFatness;
+		food_y = getRandomInt(Math.ceil(parseInt(c.height)/SnakeFatness))*SnakeFatness;
+		console.log (food_x + " "+ food_y);
+		if (!findSegment(food_x, food_y)) { //чтобы не спавнилось внутри змейки
+			ctx.fillStyle="blue";
+	    	ctx.fillRect(food_x, food_y, SnakeFatness, SnakeFatness);
+    	}
+    	else createFood ();
+	}
+
+function findSegment(x, y) {
+ for (var j=0; j<snakeSegementsArray.length; j++) {
+ 	if(snakeSegementsArray[j].x == x && snakeSegementsArray[j].y == y ) { 
+ 		ripSnake = true;
+ 		return true;
+ 	}
+ }
+ return false;
+}
+	function initSnake () {   
+
+		for (var i = 0; i < snakeLength; i++) {
+			leftOffset+=SnakeFatness;
+			snakeSegementsArray.push({"x": leftOffset, "y": topOffset});
+			ctx.fillStyle="red";
+    		ctx.fillRect(leftOffset, topOffset, SnakeFatness, SnakeFatness);
+			//snakeSegementsArray.shift();
+		}
+		createFood ();
+	}
+
+	initSnake (); //создаем змейку
+
+	function moveSnake () {
+		c = document.getElementById("snake");
+	    switch(direction){
+         
+        case "left":  // если нажата клавиша влево
+       		leftOffset -= SnakeFatness;
+        	break;
+        case "up":   // если нажата клавиша вверх
+			topOffset -= SnakeFatness;
+            break;
+        case "right":   // если нажата клавиша вправо
+       		leftOffset += SnakeFatness;
+            break;
+        case "down":   // если нажата клавиша вниз
+       		topOffset += SnakeFatness;
+            break;
+        default:
+    	}
+    	if(leftOffset >  Math.ceil(parseInt(c.width)/SnakeFatness)*SnakeFatness) leftOffset = SnakeFatness;
+   	    if(leftOffset < SnakeFatness) leftOffset = Math.ceil(parseInt(c.width)/SnakeFatness)*SnakeFatness;
+    	if(topOffset > Math.ceil(parseInt(c.height)/SnakeFatness)*SnakeFatness) topOffset = SnakeFatness;
+    	if(topOffset < SnakeFatness) topOffset = Math.ceil(parseInt(c.height)/SnakeFatness)*SnakeFatness;
+
+    	findSegment(leftOffset, topOffset);
+    	if (!ripSnake) {
+
+			if(leftOffset !== food_x || topOffset !== food_y) {
+				ctx.clearRect(snakeSegementsArray[0].x, snakeSegementsArray[0].y , SnakeFatness , SnakeFatness);
+				snakeSegementsArray.shift();
+			}
+			else {
+				ctx.clearRect(leftOffset, topOffset, SnakeFatness , SnakeFatness);
+				 createFood();
+			}
+			ctx.fillStyle="red";
+	    	ctx.fillRect(leftOffset, topOffset, SnakeFatness, SnakeFatness);
+			snakeSegementsArray.push({"x": leftOffset, "y": topOffset});
+		}
+		else {
+			ctx.fillStyle="black";
+			ctx.fillRect(leftOffset, topOffset, SnakeFatness, SnakeFatness);
+			clearInterval (timerId);
+		}
+
+		    var c = document.getElementById("snake");
+	statContext.clearRect(0, 0, 200 , 150);
+	statContext.font = "30px Verdana";
+	statContext.strokeStyle = "black";   
+	statContext.lineWidth = 1;
+	statContext.strokeText("Score " + snakeSegementsArray.length, 20, 50);
+	}
+     var timerId = setInterval(moveSnake, 50); //запускаем анимацию
+
+    </script>
+</body>
+</html>
