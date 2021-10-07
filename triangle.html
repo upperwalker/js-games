@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<style type="text/css">
+	body {
+		overflow: hidden;
+	}
+</style>
+<body>
+	<div>
+		<label for="userInput" style="background: orange; color: blue">Print some RGB letters (eg. RGRBRGGGBRGGG) or leave empty for random</label>
+	    <input style="position:absolute; top:25%; right:25%; width:10%;" type="text" id="userInput" />
+	    <input style="position:absolute; top:35%; right:25%; width:10%;" type="submit" value="Create" onclick="othername();" />
+  	</div>
+
+	</form>
+    <canvas width="1920" height="1090" id="triangle" style="background: black"> </canvas>
+
+    <script>
+    let c = document.getElementById("triangle");
+	let ctx = c.getContext("2d");
+	let size = 10
+let color = el => el=="R" ? "red" :el=="B" ? "blue" : "green"
+let next = (a,b) => a == b ? a : ["R","G","B"].find(el => el != a && el != b)
+let j = 0
+let y = 0
+let getRandom = (max) => {
+	let result = "";
+	for (let i = 0; i < max; i++) {
+	  result += ["R","G","B"][Math.floor(Math.random() * 3)]
+	}
+	return result
+}
+let triangulaser = (row) => {
+    let nextRow = []
+    if(!row.length)  return
+    if(row.length == 1) {
+        ctx.fillStyle = color(row[0]);
+		ctx.fillRect(y, j, size, size);
+		return
+    }
+    for (let i=0; i<row.length-1; i++) {
+        ctx.fillStyle = color(row[i]);
+		ctx.fillRect(y+i*size, j+i*size/2, size, size);
+        nextRow.push(next(row[i], row[i+1]))
+    }
+
+    ctx.fillStyle = color(row[row.length-1]);
+	ctx.fillRect(y+(row.length-1)*size, j+(row.length-1)*size/2, size, size);
+    j+=size
+    triangulaser(nextRow)
+}
+	function othername() {
+	    var input = document.getElementById("userInput").value;
+	    if(!input) input = getRandom(Math.floor(Math.random() * 50))
+		triangulaser (input)
+		  j+=size
+		  y+=input.length*size
+	}
+triangulaser ('RGB')
+ y+=3*size
+ j+=size
+    </script>
+</body>
+</html>
