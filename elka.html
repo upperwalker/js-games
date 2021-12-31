@@ -7,10 +7,12 @@
     <title>Christmas tree</title>
    
 </head>
-<body>
-    <canvas id="tree">
-        <p>Santa is fake</p>
-    </canvas>
+<body > 
+    <div class='xmas'>
+        <canvas id="tree">
+            <p>Santa is fake</p>
+        </canvas>
+    </div>
 </body>
 </html>
 
@@ -20,13 +22,20 @@
   ctx.canvas.width  = window.innerWidth;
   ctx.canvas.height = window.innerHeight;
 
+  const PI = Math.PI
+  const RANDOM_ANGLE_DEVIATION = PI/10;
+  const RANDOM_BRANCH_DEVIATION = 200;
   const NODES_NUM = 9;
-  const MAIN_ROOT_POS = [ctx.canvas.width/2, ctx.canvas.height - 5];
-  const MAIN_ROOT_LENGTH = 1100;
-  const MAIN_ROOT_ANGLE = -Math.PI/2;
-  const CURVATURE_ANGLE = Math.PI/43;
+  const MAIN_ROOT_POS = [ctx.canvas.width/2, ctx.canvas.height];
+  const MAIN_ROOT_LENGTH = ctx.canvas.height - 15;
+  const SLIMNESS = 12;
+  const MAIN_ROOT_ANGLE = -PI/2;
+  const CURVATURE_ANGLE = PI/43;
   const MAX_DEPTH = 4;
-  drawTree(MAIN_ROOT_POS, MAIN_ROOT_LENGTH, MAIN_ROOT_ANGLE, 0)
+  const ballsPositions = [];
+  const starPosition = []
+  draw()
+
 
 
 
@@ -46,18 +55,60 @@ function getGreenToRed(percent){
     return "#"+RR+GG+BB;
 }
 
+function rndCol() {
+  var r = Math.floor(Math.random() * 180);
+  var g = Math.floor(Math.random() * 60);
+  var b = Math.floor(Math.random() * 100);
+  return "rgb(" + r + "," + g + "," + b + ")";
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function drawBall(x, y, r, blur = true) {
+  ctx.fillStyle = rndCol();
+  if (blur) {
+      ctx.lineWidth = r / 8;
+      ctx.strokeStyle = 'black';
+      ctx.beginPath()
+      ctx.moveTo(x, y)
+      ctx.lineTo(x, y + 10 )
+      ctx.stroke()
+      ctx.beginPath();
+      ctx.arc(x, y + r + 10, r/1.4, 0, Math.PI * 2, true);
+
+      ctx.shadowColor = rndCol();
+      ctx.shadowBlur = 30;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fill();
+
+    } else {
+      ctx.shadowColor = 'transparent'
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.shadowBlur = 0;
+    }
+    ctx.beginPath();
+    ctx.arc(x, y + r + 10, r, 0, Math.PI * 2, true);
+    ctx.fill();
+}
 
 function getBrownToGreen(depth){
-    return ["#175f03","#2e5a06","#46550a","#5d4f0d","#744a10"].reverse()[depth];
-
+    //return ["#175f03","#2e5a06","#46550a","#5d4f0d","#744a10"].reverse()[depth];
+    return ["#2d1b00","#2a1c01","#281d02", "#251e03", "#042a0f"][depth];
 }
 
       
 function drawStar(cx,cy,spikes,outerRadius,innerRadius){
-  const rot=Math.PI/2*3;
-  const x=cx;
-  const y=cy;
-  const step=Math.PI/spikes;
+  let rot = PI/2*3;
+  let x = cx;
+  let y = cy;
+  const step = PI/spikes;
 
   ctx.beginPath();
   ctx.moveTo(cx,cy-outerRadius)
@@ -72,62 +123,110 @@ function drawStar(cx,cy,spikes,outerRadius,innerRadius){
     ctx.lineTo(x,y)
     rot+=step
   }
-  ctx.lineTo(cx,cy-outerRadius);
+  ctx.lineTo(cx,cy - outerRadius);
   ctx.closePath();
-  ctx.lineWidth=2;
-  ctx.strokeStyle='blue';
-  ctx.stroke();
-  ctx.fillStyle='yellow';
+  //ctx.fillStyle='yellow';
+  ctx.fillStyle = "rgba(255, 255, 200)";
+	ctx.shadowColor = '#ffff33';
+	ctx.shadowBlur = 80;
+  ctx.globalCompositeOperation = 'lighter';
   ctx.fill();
 }
 
+function randn_bm() { // https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random(); //Converting [0,1) to (0,1)
+  while(v === 0) v = Math.random();
+  let num = Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * PI * v );
+  num = num / 10.0 + 0.5; // Translate to 0 -> 1
+  if (num > 1 || num < 0) return randn_bm() // resample between 0 and 1
+  return num
+}
+
+function chaosOfNature(len) { 
+    if (len) return len * ( 1 + ( randn_bm() - 0.5) * (RANDOM_BRANCH_DEVIATION / 100) )
+    return 2 * RANDOM_ANGLE_DEVIATION * ( randn_bm() - 0.5); 
+}
 
 
-async function drawTree (branchRootPos, branchLength, branchAngle, depth, isLeftBranch) {
+async function draw() {
+  await drawTree(MAIN_ROOT_POS, MAIN_ROOT_LENGTH, MAIN_ROOT_ANGLE, 0)
+    document.body.classList.add("dark")
+    for (ball of ballsPositions) {
+      await new Promise((resolve, reject) => {
+        setTimeout(() => resolve(), 0)               //for animation
+      });
+      drawBall(...ball)
+    }
+    drawStar(...starPosition, 5, 35, 10)
+    shuffleArray(ballsPositions)
+    setInterval(async ()=>{
+    for (ball of ballsPositions) {
+      await new Promise((resolve, reject) => {
+        setTimeout(() => resolve(), 0)               //for animation
+      });
+      drawBall(...ball, false)
+    }
+  }, 1500)
 
+}
+
+async function drawTree (branchRootPos, branchLength, branchAngle, depth, curvature) {
     if (depth > MAX_DEPTH) return;
-    let newLength = branchLength/1.5 //Math.pow(branchLength, 0.94);
+    let newLength = branchLength / 1.6 // Math.pow(branchLength, 0.94);
     const branchRatio = branchLength/(NODES_NUM + 1)
-    // await new Promise((resolve, reject) => {
-    //     setTimeout(() => resolve(), 0)               //for animation
-    //    });
-    let prevSegm = branchRootPos
+    await new Promise((resolve, reject) => {
+      setTimeout(() => resolve(), 0)               //for animation
+    });
+    let prevSegm = branchRootPos    
     for (let i = 1; i <= NODES_NUM; i++) {
 
-
-
       const segmRatio = i/(NODES_NUM + 1)
-
-      let curAngle = branchAngle
-      if (depth) curAngle += (isLeftBranch ? (1 - i) : (i - 1)) * CURVATURE_ANGLE
-      let nextSegm = [prevSegm[0]+Math.cos(curAngle) * branchRatio, prevSegm[1]+Math.sin(curAngle) * branchRatio]
-      ctx.lineWidth = (newLength*(1-segmRatio))/13;
+      let curAngle = branchAngle /*+ chaosOfNature() / 2*/
+      if (depth && curvature) curAngle += (curvature === 'left' ? (1 - i) : (i - 1)) * CURVATURE_ANGLE
+      let nextSegm = [prevSegm[0] + Math.cos(curAngle) * /*chaosOfNature(*/branchRatio/*)*/, prevSegm[1] + Math.sin(curAngle) * /*chaosOfNature(*/branchRatio/*)*/]
+      ctx.lineWidth = (newLength*(1 - segmRatio)) / SLIMNESS;
+      if (!(i%2) && depth === MAX_DEPTH - 2) ballsPositions.push([...nextSegm, ctx.lineWidth]);
       ctx.strokeStyle = getBrownToGreen(depth)
       ctx.beginPath()
       ctx.moveTo(...prevSegm)
       ctx.lineTo(...nextSegm)
       ctx.stroke()
       prevSegm = nextSegm
-      await drawTree (nextSegm, newLength - (newLength * segmRatio), curAngle + Math.PI/3 - segmRatio/2, depth + 1, true)
-      await drawTree (nextSegm, newLength - (newLength * segmRatio), curAngle - Math.PI/3 + segmRatio/2, depth + 1, false)
 
+      if (i === NODES_NUM) {  // branch on top
+        await drawTree ([nextSegm[0] - Math.cos(curAngle) * /*chaosOfNature(*/(branchRatio / 2)/*)*/, nextSegm[1] - Math.sin(curAngle) * /*chaosOfNature(*/(branchRatio / 2)/*)*/], (newLength - (newLength * segmRatio)) * 1.5, curAngle + PI/3 - segmRatio/2 /*+ chaosOfNature()*/, depth + 1, 'left')
+        await drawTree ([nextSegm[0] - Math.cos(curAngle) * /*chaosOfNature(*/(branchRatio / 2)/*)*/, nextSegm[1] - Math.sin(curAngle) * /*chaosOfNature(*/(branchRatio / 2)/*)*/], (newLength - (newLength * segmRatio)) * 1.5, curAngle - PI/3 + segmRatio/2 /*+ chaosOfNature()*/, depth + 1, 'rigth')
+        await drawTree (nextSegm, newLength - (newLength * segmRatio), curAngle /*+ chaosOfNature()*/, depth + 1)
+        if (!depth) starPosition.push(nextSegm[0], nextSegm[1] - newLength/NODES_NUM);
       }
+
+      await drawTree (nextSegm, newLength - (newLength * segmRatio), curAngle + PI/3 - segmRatio/2 /*+ chaosOfNature()*/, depth + 1, 'left')
+      await drawTree (nextSegm, newLength - (newLength * segmRatio), curAngle - PI/3 + segmRatio/2 /*+ chaosOfNature()*/, depth + 1, 'rigth')
+      if(!depth) document.body.style["backdrop-filter"]=`brightness(${100-i*5}%)`;
+
+    }
 }
 
-// async function makeBalls() {
-//   await drawTree(mainRootPos, mainRootLength, mainRootAngle, 0).then(()=> {
-//     console.log('Tree ready!')
-//     console.log(ballsPositions)
-
-//     for (ball of ballsPositions) {
-
-//       ctx.beginPath();
-//       ctx.fillStyle = getRandomColor();
-//       ctx.arc(...ball, 0, 2 * Math.PI, false);
-//       ctx.fill();
-
-//     }
-
-//   })
-// }
 </script>
+
+<style>
+    body {
+        background-color: #000;
+        background-image: url(https://images.unsplash.com/photo-1531972497489-8eb337acf6e5?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=193456e9385b553747a5e0f0cbc7badb&auto=format&fit=crop&w=1334&q=80);
+        background-size: cover;
+        background-position: bottom -50px right 50%;
+        width:  100%;
+        height: 100%;
+        margin: 0;
+        background-repeat: no-repeat;
+    }
+    .xmas canvas {
+        display: block;
+        background-color: transparent;
+    }
+    .dark {
+      backdrop-filter: brightness(60%);
+    }
+      
+</style>
