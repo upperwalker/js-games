@@ -12,29 +12,32 @@
     const canvas = document.getElementById('canvas');
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
-    const ctx = canvas.getContext('2d');
+    const c = canvas.getContext('2d');
     const a = 2 * Math.PI / 6;
     const r = 40;
 
-    function init() {
-        drawGrid(canvas.width, canvas.height);
+    async function main() {
+       const res = getPositions(canvas.width, canvas.height);
+       for (const {x, y, position} of snail(res)) {
+         await drawLizard(x, y, position)
+       }
     }
-    init();
-    async function drawLizard(context, x, y, position) { // Thanks to https://gist.github.com/ashmind/8762877
-        const c = context;
+    main();
+    async function drawLizard(x, y, position) { // Thanks to https://gist.github.com/ashmind/8762877
+      console.log(x, y, position)
         c.save();
 
         if (position === 1) {
           c.translate(x- 77, y - 18);
           c.scale(0.2055, 0.2055)
           c.rotate(-Math.PI/6)
-          c.fillStyle = 'grey'
+          c.fillStyle = 'red'
         } else if (position === 2) {
           c.translate(x + 22.1 , y + 77.6 );
           c.scale(0.2055, 0.2055)
           c.rotate(Math.PI + Math.PI/6 + Math.PI/300)
         } else if (position === 3) {
-          c.fillStyle = 'red'
+          c.fillStyle = 'grey'
           c.translate(x + 59.3 , y - 52);
           c.scale(0.2055, 0.2055)
           c.rotate(Math.PI/2 + Math.PI/36)
@@ -42,7 +45,7 @@
         c.strokeStyle = '#000000';
         var m = c.moveTo.bind(c);
         var l = async (x,y) => {
-          await new Promise(resolve => setTimeout(resolve, 0));
+          await new Promise(resolve => setTimeout(resolve, 30));
           c.lineTo(x,y)
           c.stroke()
         }
@@ -260,9 +263,20 @@
 
         c.restore();
       } 
-    async function drawGrid(width, height) {
+    function snail(array) {
+      const vector = [];
+      while (array.length) {
+        vector.push(...array.shift());
+        array.map(row => vector.push(row.pop()));
+        array.reverse().map(row => row.reverse());
+      }
+      return vector.reverse().filter(Boolean);
+    }
+    function getPositions(width, height) {
 
+        const result = []
         for (let y = r, i = 0; y + r * Math.sin(a) < height; y += r * Math.sin(a), i++) {
+            result[i] = [];
             for (let x = r, j = 0; x + r * (1 + Math.cos(a)) < width; x += r * (1 + Math.cos(a)), y += (-1) ** j++ * r * Math.sin(a)) {
               
               position = (() => {
@@ -272,13 +286,14 @@
                 if (p == 1) return k ? 2 : 3
                 return k ? 3 : 1
               } )()
-
-              await drawLizard(ctx, x, y, position)
+              result[i].push({x, y, position})
+              // await drawLizard(x, y, position)
 
               
 
             }
         }
+        return result
     }
     // function drawHexagon(x, y) {
     //     ctx.beginPath();
